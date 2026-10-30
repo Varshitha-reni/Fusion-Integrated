@@ -63,6 +63,162 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserSearchResult'
           description: ''
+  /api/v1/elm/applications:
+    get:
+      operationId: elm_application_list
+      description: List the current employee's applications and create leave drafts.
+      tags:
+      - v1
+      security:
+      - iamSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApplication'
+          description: ''
+    post:
+      operationId: v1_elm_applications_create
+      description: List the current employee's applications and create leave drafts.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeaveApplication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeaveApplication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeaveApplication'
+      security:
+      - iamSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApplication'
+          description: ''
+  /api/v1/elm/applications/{id}:
+    get:
+      operationId: elm_application_detail
+      description: Retrieve an application belonging to the authenticated employee.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - iamSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApplication'
+          description: ''
+  /api/v1/elm/applications/{id}/preflight:
+    post:
+      operationId: v1_elm_applications_preflight_create
+      description: Check whether an employee's draft can proceed to submission.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionPreflight'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmissionPreflight'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmissionPreflight'
+        required: true
+      security:
+      - iamSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionPreflight'
+          description: ''
+  /api/v1/elm/applications/{id}/withdraw:
+    post:
+      operationId: v1_elm_applications_withdraw_create
+      description: Withdraw an employee's own draft application.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeaveApplication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeaveApplication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeaveApplication'
+      security:
+      - iamSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveApplication'
+          description: ''
+  /api/v1/elm/balances:
+    get:
+      operationId: v1_elm_balances_retrieve
+      description: List the authenticated employee's leave balances.
+      tags:
+      - v1
+      security:
+      - iamSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveBalance'
+          description: ''
+  /api/v1/elm/balances/history:
+    get:
+      operationId: v1_elm_balances_history_retrieve
+      description: List the authenticated employee's balance transactions.
+      tags:
+      - v1
+      security:
+      - iamSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveBalanceTransaction'
+          description: ''
   /api/v1/me:
     get:
       operationId: v1_me_retrieve
@@ -1993,6 +2149,9 @@ components:
         * `registered` - Registered students
         * `alumni` - Alumni
         * `all` - Everyone
+    BlankEnum:
+      enum:
+      - ''
     BulkOutcome:
       type: object
       properties:
@@ -2082,6 +2241,22 @@ components:
       - resume_link
       - roll_no
       - user_id
+    CategoryEnum:
+      enum:
+      - CL
+      - RH
+      - SCL
+      - EL
+      - COL
+      - VL
+      type: string
+      description: |-
+        * `CL` - Casual Leave
+        * `RH` - Restricted Holiday
+        * `SCL` - Special Casual Leave
+        * `EL` - Earned Leave
+        * `COL` - Commuted Leave
+        * `VL` - Vacation Leave
     Clearance:
       type: object
       description: Rule 24. `blocking` names each company, so a refusal is actionable.
@@ -2423,6 +2598,15 @@ components:
       - fee_reference
       - season
       - user_id
+    HalfDaySessionEnum:
+      enum:
+      - first_half
+      - second_half
+      type: string
+      description: |-
+        * `` - Full day
+        * `first_half` - First half
+        * `second_half` - Second half
     IncidentRecorded:
       type: object
       properties:
@@ -2637,6 +2821,167 @@ components:
         * `in_progress` - Selection in progress
         * `completed` - Completed
         * `cancelled` - Cancelled
+    LeaveApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        end_date:
+          type: string
+          format: date
+          readOnly: true
+        half_day_session:
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/HalfDaySessionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        chargeable_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+        purpose:
+          type: string
+          readOnly: true
+        station_leave_required:
+          type: boolean
+          readOnly: true
+        station_leave_details:
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LeaveApplicationStatusEnum'
+          readOnly: true
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - chargeable_days
+      - created_at
+      - end_date
+      - half_day_session
+      - id
+      - purpose
+      - start_date
+      - station_leave_details
+      - station_leave_required
+      - status
+      - submitted_at
+    LeaveApplicationStatusEnum:
+      enum:
+      - draft
+      - pending
+      - applicant_action_required
+      - approved
+      - rejected
+      - withdrawn
+      - cancelled
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `pending` - Pending
+        * `applicant_action_required` - Applicant Action Required
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `withdrawn` - Withdrawn
+        * `cancelled` - Cancelled
+    LeaveBalance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        period_year:
+          type: integer
+          readOnly: true
+        entitlement_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        opening_balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        available_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - available_days
+      - category
+      - entitlement_days
+      - id
+      - opening_balance
+      - period_year
+    LeaveBalanceTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: string
+          readOnly: true
+        period_year:
+          type: integer
+          readOnly: true
+        transaction_type:
+          allOf:
+          - $ref: '#/components/schemas/TransactionTypeEnum'
+          readOnly: true
+        delta_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        balance_after:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        effective_date:
+          type: string
+          format: date
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - balance_after
+      - category
+      - created_at
+      - delta_days
+      - description
+      - effective_date
+      - id
+      - period_year
+      - transaction_type
     LiftSanction:
       type: object
       properties:
@@ -3691,6 +4036,31 @@ components:
       required:
       - available
       - season
+    SubmissionPreflight:
+      type: object
+      properties:
+        application_id:
+          type: integer
+        chargeable_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        available_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        remaining_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        period_year:
+          type: integer
+      required:
+      - application_id
+      - available_days
+      - chargeable_days
+      - period_year
+      - remaining_days
     SubmitOfferLetter:
       type: object
       properties:
@@ -3714,6 +4084,30 @@ components:
         * `workshop` - Workshop
         * `internship` - Internship programme
         * `general` - General
+    TransactionTypeEnum:
+      enum:
+      - opening_credit
+      - annual_credit
+      - leave_deduction
+      - cancellation_reversal
+      - extension_deduction
+      - resumption_adjustment
+      - year_end_lapse
+      - vl_to_el_conversion
+      - offline_sync
+      - admin_adjustment
+      type: string
+      description: |-
+        * `opening_credit` - Opening credit
+        * `annual_credit` - Annual entitlement credit
+        * `leave_deduction` - Leave deduction
+        * `cancellation_reversal` - Cancellation reversal
+        * `extension_deduction` - Extension deduction
+        * `resumption_adjustment` - Resumption adjustment
+        * `year_end_lapse` - Year-end lapse
+        * `vl_to_el_conversion` - VL to EL conversion
+        * `offline_sync` - Offline leave synchronization
+        * `admin_adjustment` - Administrative adjustment
     Transition:
       type: object
       properties:

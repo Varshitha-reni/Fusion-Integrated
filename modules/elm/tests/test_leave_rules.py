@@ -7,7 +7,6 @@ from modules.elm.domain.leave_rules import (
     HolidayCalendar,
     LeaveCategory,
     MissingLeaveFactsError,
-    UnresolvedLeavePolicyError,
     VacationPeriod,
     calculate_chargeable_days,
     convert_unused_faculty_vl_to_el,
@@ -44,8 +43,11 @@ def test_cl_requires_closed_holiday_data():
         )
 
 
-@pytest.mark.parametrize("category", [LeaveCategory.EL, LeaveCategory.VL])
-def test_el_and_vl_count_both_endpoints(category):
+@pytest.mark.parametrize(
+    "category",
+    [LeaveCategory.EL, LeaveCategory.VL, LeaveCategory.COL],
+)
+def test_el_vl_and_col_count_both_endpoints(category):
     result = calculate_chargeable_days(
         date(2024, 2, 28), date(2024, 3, 1), category, []
     )
@@ -60,12 +62,7 @@ def test_reversed_date_range_is_rejected():
         )
 
 
-def test_col_policy_remains_unresolved():
-    with pytest.raises(UnresolvedLeavePolicyError):
-        calculate_chargeable_days(
-            date(2024, 1, 1), date(2024, 1, 2),
-            LeaveCategory.COL, []
-        )
+
 
 
 def test_rh_requires_published_effective_calendar():
@@ -110,7 +107,7 @@ def test_negative_unused_vl_is_rejected():
 
 
 def test_invalid_category_is_rejected():
-    with pytest.raises(ValueError, match="Invalid leave category"):
+    with pytest.raises(TypeError, match="Invalid leave category"):
         calculate_chargeable_days(
             date(2024, 1, 1), date(2024, 1, 2), "CL", []
         )

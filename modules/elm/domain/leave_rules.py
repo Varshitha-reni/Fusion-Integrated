@@ -1,8 +1,8 @@
-from enum import Enum
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
+from enum import Enum
+
 
 class LeaveCategory(Enum):
     CL = "Casual Leave"
@@ -20,7 +20,7 @@ class UnresolvedLeavePolicyError(Exception):
 
 @dataclass
 class HolidayCalendar:
-    holidays: List[date]
+    holidays: list[date]
     published: bool
     effective_from: date
     effective_to: date
@@ -32,10 +32,10 @@ class VacationPeriod:
 
 def validate_category(category: LeaveCategory) -> None:
     if not isinstance(category, LeaveCategory):
-        raise ValueError(f"Invalid leave category: {category!r}")
+        raise TypeError(f"Invalid leave category: {category!r}")
 
 def calculate_chargeable_days(
-    start_date: date, end_date: date, category: LeaveCategory, closed_holidays: List[date]
+    start_date: date, end_date: date, category: LeaveCategory, closed_holidays: list[date]
 ) -> Decimal:
     validate_category(category)
     if start_date > end_date:
@@ -54,15 +54,12 @@ def calculate_chargeable_days(
             if date.fromordinal(ordinal).weekday() < 5
             and date.fromordinal(ordinal) not in holidays
         ))
-    elif category in (LeaveCategory.EL, LeaveCategory.VL):
+    if category in (LeaveCategory.EL, LeaveCategory.COL, LeaveCategory.VL):
         return Decimal((end_date - start_date).days + 1)
-    elif category == LeaveCategory.COL:
-        raise UnresolvedLeavePolicyError("COL counting rules are unconfirmed")
-    else:
-        raise ValueError(f"Unsupported leave category: {category}")
+    raise ValueError(f"Unsupported leave category: {category}")
 
 def validate_rh_date(
-    requested_date: date, calendar: Optional[HolidayCalendar]
+    requested_date: date, calendar: HolidayCalendar | None
 ) -> None:
     if calendar is None:
         raise MissingLeaveFactsError("RH holiday calendar is missing")
@@ -84,7 +81,7 @@ def validate_rh_date(
         raise ValueError("RH date not listed in holidays")
 
 def validate_faculty_vl_period(
-    start_date: date, end_date: date, classification: str, vacation_periods: List[VacationPeriod]
+    start_date: date, end_date: date, classification: str, vacation_periods: list[VacationPeriod]
 ) -> None:
     if not classification or not isinstance(classification, str):
         raise MissingLeaveFactsError("Employee classification is missing")
